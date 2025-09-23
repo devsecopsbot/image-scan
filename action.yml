@@ -1,0 +1,47 @@
+name: "DevSecOpsBot Image Scanner"
+description: "Scan container images"
+author: "Sttor Security"
+
+inputs:
+  image:
+    description: "Container image to scan"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Setup Trivy
+      uses: aquasecurity/setup-trivy@v0.2.4
+      with:
+        version: v0.65.0
+        cache: true
+
+    - name: Restore Trivy DB cache
+      uses: actions/cache@v4
+      with:
+        path: .cache/trivy
+        key: cache-trivy-${{ github.run_id }}
+        restore-keys: cache-trivy-
+
+    - name: Install dependencies
+      run: pip install -r $GITHUB_ACTION_PATH/requirements.txt
+      shell: bash
+
+    - name: Run scanner
+      run: python $GITHUB_ACTION_PATH/scanner.py "${{ inputs.image }}"
+      shell: bash
+      env:
+        TRIVY_CACHE_DIR: ${{ github.workspace }}/.cache/trivy
+        POST_URL: ${{ secrets.POST_URL }}
+        AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
+        BLOCK_ON_CRITICAL: ${{ env.BLOCK_ON_CRITICAL }}
+        BLOCK_ON_HIGH: ${{ env.BLOCK_ON_HIGH }}
+        BLOCK_ON_ANY: ${{ env.BLOCK_ON_ANY }}
+        BLOCK_ON_SECRETS: ${{ env.BLOCK_ON_SECRETS }}
