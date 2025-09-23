@@ -1,12 +1,12 @@
 # DevSecOpsBot Image Scanner
 
-GitHub Action to scan container images for **vulnerabilities** and **secrets** using [Trivy](https://github.com/aquasecurity/trivy), with built-in **blocking policies** and optional **backend reporting** to [devsecops.bot](https://devsecops.bot).
+GitHub Action to scan container images for **vulnerabilities** and **secrets**, with built-in **blocking policies** and optional **backend reporting** to [devsecops.bot](https://devsecops.bot).
 
 ---
 
 ## 🚀 Features
 
-* Scans container images with Trivy (`vuln,secret` scanners)
+* Scans container images for vulnerability and secrets.
 * Supports **GitHub Actions CI** and **local CLI** usage (`scanner.py`)
 * Flexible **blocking policies** (critical, high+critical, any vuln, secrets)
 * Supports multiple registry auth methods (token, Azure, GCP, AWS, generic)
@@ -90,9 +90,6 @@ POST_URL=https://api.devsecops.bot AUTH_TOKEN=yourtoken python scanner.py myimag
 * `REGISTRY_AZURE_USERNAME`, `REGISTRY_AZURE_PASSWORD` – Azure registry credentials
 * `BASE64_GOOGLE_CREDENTIALS` – base64-encoded Google credentials (json)
 
-### Trivy Cache
-
-* `TRIVY_CACHE_DIR` – cache directory for Trivy DB (defaults to `~/.cache/trivy` locally, `.cache/trivy` in GitHub Actions)
 
 ---
 
@@ -100,7 +97,7 @@ POST_URL=https://api.devsecops.bot AUTH_TOKEN=yourtoken python scanner.py myimag
 
 ### AWS ECR
 
-Trivy can use your standard AWS credentials (from environment or IAM role). Example:
+You can your standard AWS credentials (from environment or IAM role). Example:
 
 ```bash
 export AWS_ACCESS_KEY_ID=xxxx
