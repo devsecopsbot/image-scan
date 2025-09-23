@@ -1,6 +1,6 @@
 # DevSecOpsBot Image Scanner
 
-A GitHub Action that scans container images for **vulnerabilities** and **secrets** . Includes built‑in **blocking policies**, **CI/CD integration**, and optional reporting to the [DevSecOpsBot dashboard](https://devsecops.bot).
+A GitHub Action that scans container images for **vulnerabilities** and **secrets**. Includes built-in **blocking policies**, **CI/CD integration**, and optional reporting to the [DevSecOpsBot dashboard](https://devsecops.bot).
 
 ---
 
@@ -43,16 +43,15 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: devsecopsbot/image-scan@v0.0.2
+      - uses: devsecopsbot/image-scan@v1
         with:
           image: ${{ github.event.inputs.image }}
           post-url: ${{ secrets.POST_URL }}
           auth-token: ${{ secrets.AUTH_TOKEN }}
-        env:
-          BLOCK_ON_CRITICAL: 0
-          BLOCK_ON_HIGH: 10
-          BLOCK_ON_ANY: false
-          BLOCK_ON_SECRETS: true
+          block-on-critical: 0
+          block-on-high: 10
+          block-on-any: false
+          block-on-secrets: true
 ```
 
 ### Local usage
@@ -74,17 +73,19 @@ POST_URL=https://api.devsecops.bot AUTH_TOKEN=yourtoken python scanner.py myimag
 
 ### Backend
 
-* `POST_URL` – backend endpoint (e.g., `https://api.devsecops.bot/api/scan`)
-* `AUTH_TOKEN` – backend auth token (obtain from [devsecops.bot](https://devsecops.bot))
+* `post-url` (input) – backend endpoint (e.g., `https://api.devsecops.bot/api/scan`)
+* `auth-token` (input) – backend auth token (obtain from [devsecops.bot](https://devsecops.bot))
 
-### Blocking Policies
+### Blocking Policies (Inputs)
 
-* `BLOCK_ON_CRITICAL` – block if critical vulns exceed threshold (e.g., `0`)
-* `BLOCK_ON_HIGH` – block if high+critical vulns exceed threshold (e.g., `10`)
-* `BLOCK_ON_ANY` – block if *any* vulnerability exists (`true/false`)
-* `BLOCK_ON_SECRETS` – block if any secrets are detected (`true/false`)
+* `block-on-critical` – block if critical vulns exceed threshold (e.g., `0`)
+* `block-on-high` – block if high+critical vulns exceed threshold (e.g., `10`)
+* `block-on-any` – block if *any* vulnerability exists (`true/false`)
+* `block-on-secrets` – block if any secrets are detected (`true/false`)
 
-### Registry Options
+> **Note:** When running locally, blocking can also be set with environment variables (`BLOCK_ON_CRITICAL`, etc.). Inside GitHub Actions, you should configure these as **inputs** when calling the Action.
+
+### Registry Options (Environment Variables)
 
 * `REGISTRY_TOKEN` – token for registry auth
 * `REGISTRY_USERNAME`, `REGISTRY_PASSWORD` – generic registry credentials
@@ -126,7 +127,6 @@ export REGISTRY_AZURE_PASSWORD=<password>
 python scanner.py myregistry.azurecr.io/myimage:tag
 ```
 
-
 ---
 
 ## 📤 Output
@@ -166,10 +166,10 @@ The Action **exits with code 1** if any configured blocking policy is triggered,
 
 Examples:
 
-* `BLOCK_ON_CRITICAL=0` → fail if *any* critical vuln exists
-* `BLOCK_ON_HIGH=5` → fail if more than 5 high+critical vulns
-* `BLOCK_ON_ANY=true` → fail if any vuln exists
-* `BLOCK_ON_SECRETS=true` → fail if any secrets found
+* `block-on-critical: 0` → fail if *any* critical vuln exists
+* `block-on-high: 5` → fail if more than 5 high+critical vulns
+* `block-on-any: true` → fail if any vuln exists
+* `block-on-secrets: true` → fail if any secrets found
 
 ---
 
@@ -178,30 +178,30 @@ Examples:
 ### Fail build on any vulnerability
 
 ```yaml
-env:
-  BLOCK_ON_ANY: true
+with:
+  block-on-any: true
 ```
 
 ### Fail build if >5 high/critical vulns
 
 ```yaml
-env:
-  BLOCK_ON_HIGH: 5
+with:
+  block-on-high: 5
 ```
 
 ### Upload results to backend
 
 ```yaml
-env:
-  POST_URL: https://api.devsecops.bot/api/scan
-  AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
+with:
+  post-url: https://api.devsecops.bot/api/scan
+  auth-token: ${{ secrets.AUTH_TOKEN }}
 ```
 
 ---
 
 ## 📑 Without Backend (Tabular Console Mode)
 
-If `POST_URL` and `AUTH_TOKEN` are not set, the scanner prints results in tabular format to the console:
+If `post-url` and `auth-token` are not set, the scanner prints results in tabular format to the console:
 
 ![Tabular Output](images/tabular.png)
 
