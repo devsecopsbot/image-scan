@@ -43,7 +43,7 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: devsecopsbot/image-scan@v1
+      - uses: devsecopsbot/image-scan@v0.0.2
         with:
           image: ${{ github.event.inputs.image }}
           post-url: ${{ secrets.POST_URL }}
