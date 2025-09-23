@@ -197,6 +197,10 @@ with:
   auth-token: ${{ secrets.AUTH_TOKEN }}
 ```
 
+
+👉 See a full working workflow here: [test-image-scan.yml](https://github.com/devsecopsbot/test-image-scan/blob/main/.github/workflows/test-image-scan.yml)
+
+
 ---
 
 ## 📑 Without Backend (Tabular Console Mode)
