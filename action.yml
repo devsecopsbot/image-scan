@@ -6,6 +6,30 @@ inputs:
   image:
     description: "Container image to scan"
     required: true
+  post-url:
+    description: "Backend URL to post results"
+    required: false
+    default: ""
+  auth-token:
+    description: "Auth token for backend"
+    required: false
+    default: ""
+  block-on-critical:
+    description: "Block if critical vulnerabilities exceed threshold"
+    required: false
+    default: ""
+  block-on-high:
+    description: "Block if high+critical vulnerabilities exceed threshold"
+    required: false
+    default: ""
+  block-on-any:
+    description: "Block if any vulnerability exists"
+    required: false
+    default: ""
+  block-on-secrets:
+    description: "Block if secrets are found"
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -39,9 +63,9 @@ runs:
       shell: bash
       env:
         TRIVY_CACHE_DIR: ${{ github.workspace }}/.cache/trivy
-        POST_URL: ${{ secrets.POST_URL }}
-        AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
-        BLOCK_ON_CRITICAL: ${{ env.BLOCK_ON_CRITICAL }}
-        BLOCK_ON_HIGH: ${{ env.BLOCK_ON_HIGH }}
-        BLOCK_ON_ANY: ${{ env.BLOCK_ON_ANY }}
-        BLOCK_ON_SECRETS: ${{ env.BLOCK_ON_SECRETS }}
+        POST_URL: ${{ inputs.post-url }}
+        AUTH_TOKEN: ${{ inputs.auth-token }}
+        BLOCK_ON_CRITICAL: ${{ inputs.block-on-critical }}
+        BLOCK_ON_HIGH: ${{ inputs.block-on-high }}
+        BLOCK_ON_ANY: ${{ inputs.block-on-any }}
+        BLOCK_ON_SECRETS: ${{ inputs.block-on-secrets }}
