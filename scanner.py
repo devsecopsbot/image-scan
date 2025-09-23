@@ -175,8 +175,8 @@ def main(image):
             except Exception as e:
                 print(f"Attempt {i+1}: POST failed with error: {e}")
             time.sleep(2 * (i + 1))
-    else:
-        print_summary_table(report, sbom)
+
+    print_summary_table(report, sbom)
 
     if report:
         enforce_block_policy(report)
