@@ -103,7 +103,13 @@ def get_source_info():
             "repo_full_name": os.getenv("GITHUB_REPOSITORY", ""),
             "workflow": os.getenv("GITHUB_WORKFLOW", ""),
             "run_id": os.getenv("GITHUB_RUN_ID", ""),
-            "run_number": os.getenv("GITHUB_RUN_NUMBER", "")
+            "run_number": os.getenv("GITHUB_RUN_NUMBER", ""),
+            "branch": os.getenv("GITHUB_REF", ""),
+            "commit": os.getenv("GITHUB_SHA", ""),
+            "actor": os.getenv("GITHUB_ACTOR", ""),
+            "event": os.getenv("GITHUB_EVENT_NAME", ""),
+            "pr_head": os.getenv("GITHUB_HEAD_REF", ""),
+            "pr_base": os.getenv("GITHUB_BASE_REF", "")
         }
     return "CLI", {}
 
