@@ -67,6 +67,7 @@ def run_trivy(image):
 
 
 def enforce_block_policy(report):
+
     results = report.get("Results", []) if report else []
     counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0, "UNKNOWN": 0}
     secrets = []
@@ -83,18 +84,26 @@ def enforce_block_policy(report):
     total = sum(counts.values())
     bc, bh, ba, bs = os.getenv("BLOCK_ON_CRITICAL"), os.getenv("BLOCK_ON_HIGH"), os.getenv("BLOCK_ON_ANY"), os.getenv("BLOCK_ON_SECRETS")
 
+    message = "Build Successful"
+    exit_code = 0
     if bc and crit > int(bc):
-        print(f"❌ Blocking: {crit} critical vulnerabilities > threshold {bc}")
-        sys.exit(1)
+        message = f"❌ Blocking: {crit} critical vulnerabilities > threshold {bc}"
+        exit_code = 1
+
     if bh and crit + high > int(bh):
-        print(f"❌ Blocking: {crit+high} high/critical vulnerabilities > threshold {bh}")
-        sys.exit(1)
+        message = f"❌ Blocking: {crit+high} high/critical vulnerabilities > threshold {bh}"
+        exit_code = 1
+
     if ba and ba.lower() in ["1", "true", "yes"] and total > 0:
-        print(f"❌ Blocking: {total} vulnerabilities found")
-        sys.exit(1)
+        message = f"❌ Blocking: {total} vulnerabilities found"
+        exit_code = 1
+
     if bs and bs.lower() in ["1", "true", "yes"] and secrets:
-        print(f"❌ Blocking: {len(secrets)} secrets detected")
-        sys.exit(1)
+        message = f"❌ Blocking: {len(secrets)} secrets detected"
+        exit_code = 1
+
+
+    return exit_code, message
 
 def get_source_info():
     if os.getenv("GITHUB_ACTIONS") == "true":
@@ -169,8 +178,10 @@ def main(image):
     url, token = os.getenv("POST_URL"), os.getenv("AUTH_TOKEN")
 
     if url and token and report:
+        exit_code, message = enforce_block_policy(report)
+
         headers = {"Authorization": token, "Content-Type": "application/json"}
-        payload = {"image_uri": image, "source": source, "source_info": source_info,
+        payload = {"image_uri": image, "source": source, "source_info": source_info, "status": {"exit_code": exit_code, "message":message},
                    "scan_output": {"report": report, "sbom": sbom}}
         for i in range(3):
             try:
@@ -182,10 +193,14 @@ def main(image):
                 print(f"Attempt {i+1}: POST failed with error: {e}")
             time.sleep(2 * (i + 1))
 
+        print(message)
+        if exit_code:
+            sys.exit(exit_code)
+
     print_summary_table(report, sbom)
 
-    if report:
-        enforce_block_policy(report)
+
+
 
 
 def print_helper():
