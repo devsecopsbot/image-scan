@@ -181,11 +181,14 @@ def main(image):
     summary = print_summary_table(report, sbom)
     exit_code, message = enforce_block_policy(report)
     print(message)
+    source_info["exit_code"] = exit_code
+    source_info["stats"] = summary
+    source_info["message"] = message
 
     if url and token and report:
         headers = {"Authorization": token, "Content-Type": "application/json"}
-        payload = {"image_uri": image, "source": source, "source_info": source_info, "status": {"exit_code": exit_code, "message":message},
-                  "summary": summary, "scan_output": {"report": report, "sbom": sbom}}
+        payload = {"image_uri": image, "source": source, "source_info": source_info,
+                  "scan_output": {"report": report, "sbom": sbom}}
         for i in range(3):
             try:
                 r = requests.post(url, headers=headers, data=json.dumps(payload))
