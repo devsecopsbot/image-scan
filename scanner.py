@@ -124,9 +124,9 @@ def get_source_info():
 
 
 def print_summary_table(report, sbom):
+    vuln_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0, "UNKNOWN": 0}
     try:
         results = report.get("Results", []) if report else []
-        vuln_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0, "UNKNOWN": 0}
         secrets, top_vulns = [], []
 
         for item in results:
@@ -170,19 +170,22 @@ def print_summary_table(report, sbom):
     except Exception as e:
         print(f"⚠️ Failed to parse summary: {e}")
 
+    return vuln_counts
+
 
 def main(image):
     data = run_trivy(image)
     source, source_info = get_source_info()
     report, sbom = data.get("report"), data.get("sbom")
     url, token = os.getenv("POST_URL"), os.getenv("AUTH_TOKEN")
+    summary = print_summary_table(report, sbom)
+    exit_code, message = enforce_block_policy(report)
+    print(message)
 
     if url and token and report:
-        exit_code, message = enforce_block_policy(report)
-
         headers = {"Authorization": token, "Content-Type": "application/json"}
         payload = {"image_uri": image, "source": source, "source_info": source_info, "status": {"exit_code": exit_code, "message":message},
-                   "scan_output": {"report": report, "sbom": sbom}}
+                  "summary": summary, "scan_output": {"report": report, "sbom": sbom}}
         for i in range(3):
             try:
                 r = requests.post(url, headers=headers, data=json.dumps(payload))
@@ -193,11 +196,10 @@ def main(image):
                 print(f"Attempt {i+1}: POST failed with error: {e}")
             time.sleep(2 * (i + 1))
 
-        print(message)
-        if exit_code:
-            sys.exit(exit_code)
+    if exit_code:
+        sys.exit(exit_code)
 
-    print_summary_table(report, sbom)
+
 
 
 
