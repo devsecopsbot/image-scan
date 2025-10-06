@@ -44,7 +44,7 @@ runs:
     - name: Setup Trivy
       uses: aquasecurity/setup-trivy@v0.2.4
       with:
-        version: v0.65.0
+        version: v0.67.0
         cache: true
 
     - name: Restore Trivy DB cache
@@ -65,6 +65,7 @@ runs:
         TRIVY_CACHE_DIR: ${{ github.workspace }}/.cache/trivy
         POST_URL: ${{ inputs.post-url }}
         AUTH_TOKEN: ${{ inputs.auth-token }}
+        SERVER_TOKEN: ${{ inputs.server-token }}
         BLOCK_ON_CRITICAL: ${{ inputs.block-on-critical }}
         BLOCK_ON_HIGH: ${{ inputs.block-on-high }}
         BLOCK_ON_ANY: ${{ inputs.block-on-any }}

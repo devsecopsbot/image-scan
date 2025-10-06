@@ -1,18 +1,18 @@
 # DevSecOpsBot Image Scanner
 
-A GitHub Action that scans container images for **vulnerabilities** and **secrets**. Includes built-in **blocking policies**, **CI/CD integration**, and optional reporting to the [DevSecOpsBot dashboard](https://devsecops.bot).
+A GitHub Action that scans container images for **vulnerabilities** and **secrets**, with built-in **blocking policies**, **CI/CD integration**, and optional reporting to the [DevSecOpsBot dashboard](https://devsecops.bot).
 
 ---
 
 ## 🚀 Features
 
-* 🔍 Scan container images for **vulnerabilities** and **secrets**
-* 🛠️ Works in **GitHub Actions CI** and **locally** with `scanner.py`
+* 🔍 Scans container images for **vulnerabilities** and **secrets**
+* 🛠️ Runs natively inside **GitHub Actions CI**
 * 🛡️ Flexible **blocking policies**: block on critical, high+critical, any vulnerability, or secrets
-* ☁️ Supports multiple registry providers: **AWS ECR, GCP Artifact Registry, Azure ACR, Docker Hub, generic private registries**
-* 📦 Produces both **tabular CLI output** and **structured JSON** for backend ingestion
-* 🧾 Detects CI context and attaches **GitHub metadata** to scan results
-* 📤 Optionally **POST results** to a backend for dashboards and audit trails
+* ☁️ Supports **AWS ECR**, **GCP Artifact Registry**, **Azure ACR**, **Docker Hub**, and private registries
+* 📦 Produces both **tabular CLI output** (for CI logs) and **structured JSON** (for backend ingestion)
+* 🯞 Automatically detects **GitHub metadata** for each CI run
+* 📤 Optionally **POSTs results** to a backend for dashboards and audit trails
 
 ---
 
@@ -20,13 +20,13 @@ A GitHub Action that scans container images for **vulnerabilities** and **secret
 
 ![Dashboard](images/dashboard.png)
 
-Sign up at [https://devsecops.bot](https://devsecops.bot) to get your **free token** and send results to the backend dashboard.
+Sign up at [https://devsecops.bot](https://devsecops.bot) to get your **free token** and view your organization’s scan results in the DevSecOpsBot dashboard.
 
 ---
 
 ## 📦 Usage
 
-### GitHub Actions workflow
+### GitHub Actions Workflow
 
 ```yaml
 name: Image Scan
@@ -48,23 +48,11 @@ jobs:
           image: ${{ github.event.inputs.image }}
           post-url: ${{ secrets.POST_URL }}
           auth-token: ${{ secrets.AUTH_TOKEN }}
+          server-token: ${{ secrets.SERVER_TOKEN }}
           block-on-critical: 0
           block-on-high: 10
           block-on-any: false
           block-on-secrets: true
-```
-
-### Local usage
-
-```bash
-# Scan an image locally
-python scanner.py nginx:latest
-
-# Block if any critical vulnerabilities exist
-BLOCK_ON_CRITICAL=0 python scanner.py nginx:latest
-
-# Send results to backend
-POST_URL=https://api.devsecops.bot AUTH_TOKEN=yourtoken python scanner.py myimage:tag
 ```
 
 ---
@@ -73,65 +61,52 @@ POST_URL=https://api.devsecops.bot AUTH_TOKEN=yourtoken python scanner.py myimag
 
 ### Backend
 
-* `post-url` (input) – backend endpoint (e.g., `https://api.devsecops.bot/api/scan`)
-* `auth-token` (input) – backend auth token (obtain from [devsecops.bot](https://devsecops.bot))
+* `post-url` – backend endpoint (e.g., `https://api.devsecops.bot/api/scan`)
+* `auth-token` – backend authentication token (from [devsecops.bot](https://devsecops.bot))
+* `server-token` – vulnerability DB token (from [devsecops.bot](https://devsecops.bot))
 
-### Blocking Policies (Inputs)
+### Blocking Policies
 
 * `block-on-critical` – block if critical vulns exceed threshold (e.g., `0`)
 * `block-on-high` – block if high+critical vulns exceed threshold (e.g., `10`)
 * `block-on-any` – block if *any* vulnerability exists (`true/false`)
 * `block-on-secrets` – block if any secrets are detected (`true/false`)
 
-> **Note:** When running locally, blocking can also be set with environment variables (`BLOCK_ON_CRITICAL`, etc.). Inside GitHub Actions, you should configure these as **inputs** when calling the Action.
-
-### Registry Options (Environment Variables)
-
-* `REGISTRY_TOKEN` – token for registry auth
-* `REGISTRY_USERNAME`, `REGISTRY_PASSWORD` – generic registry credentials
-* `REGISTRY_AZURE_USERNAME`, `REGISTRY_AZURE_PASSWORD` – Azure registry credentials
-* `BASE64_GOOGLE_CREDENTIALS` – base64-encoded Google service account JSON
-* `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` – AWS IAM credentials for ECR
+> Configure these inputs directly in your GitHub Actions workflow.
 
 ---
 
-## ☁️ Cloud Registries
+## ☁️ Cloud Registry Authentication
 
 ### AWS Elastic Container Registry (ECR)
 
-Authenticate using IAM credentials or roles:
-
-```bash
-export AWS_ACCESS_KEY_ID=xxxx
-export AWS_SECRET_ACCESS_KEY=yyyy
-export AWS_REGION=us-east-1
-python scanner.py <aws_account_id>.dkr.ecr.us-east-1.amazonaws.com/myimage:tag
+```yaml
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: us-east-1
 ```
 
 ### Google Artifact Registry / GCR
 
-Provide service account JSON encoded as base64:
-
-```bash
-export BASE64_GOOGLE_CREDENTIALS=$(cat key.json | base64)
-python scanner.py gcr.io/myproject/myimage:tag
+```yaml
+env:
+  BASE64_GOOGLE_CREDENTIALS: ${{ secrets.BASE64_GOOGLE_CREDENTIALS }}
 ```
 
 ### Azure Container Registry (ACR)
 
-Use registry-specific username/password:
-
-```bash
-export REGISTRY_AZURE_USERNAME=<username>
-export REGISTRY_AZURE_PASSWORD=<password>
-python scanner.py myregistry.azurecr.io/myimage:tag
+```yaml
+env:
+  REGISTRY_AZURE_USERNAME: ${{ secrets.REGISTRY_AZURE_USERNAME }}
+  REGISTRY_AZURE_PASSWORD: ${{ secrets.REGISTRY_AZURE_PASSWORD }}
 ```
 
 ---
 
 ## 📤 Output
 
-### Console Output
+### CI Console Output
 
 * 🔐 Secrets found
 * 🛡️ Vulnerability summary (counts by severity)
@@ -162,7 +137,7 @@ python scanner.py myregistry.azurecr.io/myimage:tag
 
 ## 🛡️ Blocking Behavior
 
-The Action **exits with code 1** if any configured blocking policy is triggered, failing the job.
+The Action **exits with code 1** if any configured blocking policy is triggered, failing the CI job.
 
 Examples:
 
@@ -173,7 +148,7 @@ Examples:
 
 ---
 
-## 📖 Examples
+## 🔖 Examples
 
 ### Fail build on any vulnerability
 
@@ -195,20 +170,15 @@ with:
 with:
   post-url: https://api.devsecops.bot/api/scan
   auth-token: ${{ secrets.AUTH_TOKEN }}
+  server-token: ${{ secrets.SERVER_TOKEN }}
 ```
-
 
 👉 See a full working workflow here: [test-image-scan.yml](https://github.com/devsecopsbot/test-image-scan/blob/main/.github/workflows/test-image-scan.yml)
 
-
 ---
 
-## 📑 Without Backend (Tabular Console Mode)
+## 💑 Console Mode (CI Logs)
 
-If `post-url` and `auth-token` are not set, the scanner prints results in tabular format to the console:
+If `post-url` and `auth-token` are not provided, results are printed directly to the **GitHub Actions logs** in tabular format:
 
 ![Tabular Output](images/tabular.png)
-
-Useful for local testing and debugging without backend integration.
-
----

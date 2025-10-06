@@ -1,5 +1,6 @@
 import os, sys, json, base64, tempfile, subprocess, time
 import requests
+import random
 from tabulate import tabulate
 
 
@@ -26,12 +27,13 @@ def prepare_trivy_env():
 
 
 def run_trivy(image):
+    server = random.choices([1,2])
     prepare_trivy_env()
     cache_dir = os.getenv("TRIVY_CACHE_DIR", os.path.expanduser("~/.cache/trivy"))
     base_cmd = ["trivy", "image", image, "--cache-dir", cache_dir]
 
-    if os.getenv("AUTH_TOKEN"):
-        base_cmd += ["--server", "https://vuldb.devsecops.bot", "--token", os.environ["AUTH_TOKEN"]]
+    if os.getenv("SERVER_TOKEN"):
+        base_cmd += ["--server", f"https://vulndb{server}.devsecops.bot", "--token", os.environ["SERVER_TOKEN"], "--token-header", "X-Server-Token"]
 
     if os.getenv("REGISTRY_TOKEN"):
         base_cmd += ["--registry-token", os.environ["REGISTRY_TOKEN"]]
@@ -178,6 +180,7 @@ def main(image):
     source, source_info = get_source_info()
     report, sbom = data.get("report"), data.get("sbom")
     url, token = os.getenv("POST_URL"), os.getenv("AUTH_TOKEN")
+    url = url.strip("/") + "/api/container/scan/output/"
     summary = print_summary_table(report, sbom)
     exit_code, message = enforce_block_policy(report)
     print(message)
@@ -215,6 +218,7 @@ Usage: scanner <image>
 Environment Variables / Options:
   POST_URL            URL of backend to upload scan results. Example: https://myserver/api/scan
   AUTH_TOKEN          Auth token for backend. Example: secret123
+  SERVER_TOKEN        Token to access vulnerability database.
 
 Blocking Options (exit 1 if triggered):
   BLOCK_ON_CRITICAL   Block if critical vulns exceed threshold. Example: 0
