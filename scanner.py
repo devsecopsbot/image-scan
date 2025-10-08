@@ -27,7 +27,7 @@ def prepare_trivy_env():
 
 
 def run_trivy(image):
-    server = random.choices([1,2])
+    server = random.choices([1,2])[0]
     prepare_trivy_env()
     cache_dir = os.getenv("TRIVY_CACHE_DIR", os.path.expanduser("~/.cache/trivy"))
     base_cmd = ["trivy", "image", image, "--cache-dir", cache_dir]
