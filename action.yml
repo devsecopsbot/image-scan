@@ -14,6 +14,10 @@ inputs:
     description: "Auth token for backend"
     required: false
     default: ""
+  server-token:
+    description: "Server token for backend vulnerability database"
+    required: false
+    default: ""
   block-on-critical:
     description: "Block if critical vulnerabilities exceed threshold"
     required: false
