@@ -1,3 +1,4 @@
+
 name: "DevSecOpsBot Image Scanner"
 description: "Scan container images"
 author: "Sttor Security"
@@ -45,9 +46,54 @@ runs:
       with:
         python-version: "3.11"
 
+    # OLD SETUP - DISABLED (get.trivy.dev unavailable)
+    # - name: Setup Trivy
+    #   uses: aquasecurity/setup-trivy@e07451d2e059ed86c2870430ea286b3a9e0bf241
+
+    # NEW SETUP - Download directly from GitHub Releases
     - name: Setup Trivy
-      uses: aquasecurity/setup-trivy@e07451d2e059ed86c2870430ea286b3a9e0bf241
-  
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        VERSION="0.76.1"
+
+        case "$(uname -m)" in
+          x86_64) ARCH="64bit" ;;
+          aarch64|arm64) ARCH="ARM64" ;;
+          *) echo "Unsupported architecture"; exit 1 ;;
+        esac
+
+        ASSET="trivy_${VERSION}_Linux-${ARCH}.tar.gz"
+        BASE="https://github.com/aquasecurity/trivy/releases/download/v${VERSION}"
+
+        TMP_DIR="$(mktemp -d)"
+        trap 'rm -rf "$TMP_DIR"' EXIT
+
+        curl -fSL --retry 3 \
+          "${BASE}/${ASSET}" \
+          -o "${TMP_DIR}/${ASSET}"
+
+        curl -fSL --retry 3 \
+          "${BASE}/trivy_${VERSION}_checksums.txt" \
+          -o "${TMP_DIR}/checksums.txt"
+
+        EXPECTED="$(awk -v name="$ASSET" \
+          '{file=$2; sub(/^\*/, "", file); if(file==name){print $1; exit}}' \
+          "${TMP_DIR}/checksums.txt")"
+
+        test -n "$EXPECTED"
+        (cd "$TMP_DIR" && echo "$EXPECTED  $ASSET" | sha256sum -c -)
+
+        tar -xzf "${TMP_DIR}/${ASSET}" -C "$TMP_DIR"
+
+        mkdir -p "${RUNNER_TEMP}/trivy-bin"
+        install -m 0755 "${TMP_DIR}/trivy" \
+          "${RUNNER_TEMP}/trivy-bin/trivy"
+
+        echo "${RUNNER_TEMP}/trivy-bin" >> "$GITHUB_PATH"
+
+        "${RUNNER_TEMP}/trivy-bin/trivy" --version
 
     - name: Restore Trivy DB cache
       uses: actions/cache@v4
